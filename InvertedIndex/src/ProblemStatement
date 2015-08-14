@@ -1,0 +1,58 @@
+Inverted Indexing Exercise
+Warning	It is strongly recommended that you first complete the word count tutorial before trying this exercise.
+In this exercise, you'll be creating an inverted index. An inverted index is a data structure common to nearly all information retrieval systems. Let us consider the following famous lines from Shakespeare's Merchants of Venice:
+
+1: if you prick us do we not bleed
+2: if you tickle us do we not laugh
+3: if you poison us do we not die and
+4: if you wrong us shall we not revenge
+An inverted index consists of a collection of postings lists, one associated with each unique term in the collection. Each postings list consists of a number of individual postings. Each posting holds a document identifier (docno) and the frequency (i.e., count) of the term in that document.
+
+Let's treat each line in the above sample data as if it were a "document". The complete inverted index would look something like this:
+
+and     : 1 : (3, 1)
+bleed   : 1 : (1, 1)
+die     : 1 : (3, 1)
+do      : 3 : (1, 1), (2, 1), (3, 1)
+if      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+laugh   : 1 : (2, 1)
+not     : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+poison  : 1 : (3, 1)
+prick   : 1 : (1, 1)
+revenge : 1 : (4, 1)
+shall   : 1 : (4, 1)
+tickle  : 1 : (2, 1)
+us      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+we      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+wrong   : 1 : (4, 1)
+you     : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+As you can see, we have a postings list for each word that appears in the collection. Let us look at the postings list corresponding to the term if in a bit more detail:
+
+if      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+The number directly after the term is its document frequency or df for short. The df specifies the number of documents that contain this term. Since if appears in all four documents, its df is 4. Although the df can be easily reconstructed by counting the number of postings, it is often explicitly stored in the inverted index. The postings list contains a number of postings, each of which is a (docno, tf) tuple. The docno is simply a unique identifier for the document (one through four, in this case). The tf, which stands for term frequency, is the number of times the term appears in the document. The term if appears once in every document. Typically, postings are sorted by ascending docno (as shown above).
+
+Your Task
+Write a MapReduce program that builds an inverted index (as described above). Each postings list should explicitly store the df, as well as all the individual postings. Postings should be sorted by ascending docno (postings corresponding to smaller docnos should precede postings corresponding to larger docnos). Note that the description above only specifies the logical structure of the inverted index—you are free in your choice of data structures for the actual implementation (e.g., each posting does not literally need to be a tuple denoted by parentheses).
+
+Run the inverted indexer on the sample input included in Cloud9, the Bible and the complete works of Shakespeare. As with the above case, treat each line as if it were an individual "document". When you map over a plain text file using TextInputFormat in Hadoop, the key passed to the mapper contains the byte offset of the line from the beginning of the file, while the value contains the text of the line. Use this offset value as the unique docno. As part of this exercise you'll also need to write a utility (outside MapReduce) that takes a given docno (i.e., the byte offset) and returns the associated line.
+
+Questions to answer:
+
+Look up the postings corresponding to the term "starcross'd". There should only be one line in the entire collection that contains the term. What is that line? What's its docno (i.e., byte offset)?
+Look up the postings corresponding to the term "gold". Generate a histogram of tf values. That is, in how many lines does "gold" appear once, twice, three times, etc.?
+Do the same for the terms "silver" and "bronze".
+Practical Tips
+In this exercise, you'll have to create and manipulate postings lists, which are complex objects that have their own internal structure. Let's consider this term and its associated postings list as an example:
+
+if      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+You have three choices to represent postings lists. First, you can encode them as Java strings wrapped inside Hadoop Text objects. The string format might look something like this:
+
+4:1,1:2,1:3,1:4,1
+The downside is that when manipulating postings, you'll have to do a lot of string-based operations (e.g., splits). This approach will work, but it's pretty ugly. The second approach is to write your own custom Writable. The third is to reuse Writables that are in the lintools-datatypes package here.
+
+If you decide to adopt the second or third option, this exercise is a good opportunity to learn about different output formats. An OutputFormat (see Hadoop API) describes how output key-value pairs are written to HDFS. By default, Hadoop uses TextOutputFormat, which writes out the key-value pairs in human-readable text format. This is good for you, but can be annoying if you want to further manipulate the output programmatically—since you'll have the read in the text file and parse the key-value pairs back into Java objects (even if you have your own custom Writables).
+
+As an alternative, you might want to consider SequenceFileOutputFormat. You can specify that format with the setOutputFormatClass method in Job class. If you do this, the output of your MapReduce job will be stored in one or more SequenceFiles. The advantage of SequenceFiles is that they store key-value pairs in a machine-readable format, i.e., as serialized byte representations of the Java objects (not human readable, but can be programmatically manipulated quite easily). The SequenceFile API provides methods for reading key-value pairs—saving you the effort of having to manually parse plain text files. Of course, SequenceFiles aren't very useful if you are using Text objects as output values.
+
+Along the same lines, you might also want to take a look at MapFileOutputFormat, which writes the output key-value pairs to... as you've guessed, MapFiles! These files have the additional advantage of supporting random access to the keys. You should learn to use SequenceFiles, but MapFiles are likely more useful for this exercise. Once again, see the API for details.
+

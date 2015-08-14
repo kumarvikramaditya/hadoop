@@ -1,0 +1,7 @@
+com/invertedindex/InvertedIndex$InvertedMap.class
+com/invertedindex/DocAttributes.class
+com/invertedindex/InvertedIndex$InvertedReduce.class
+com/invertedindex/DocInputFormat.class
+com/invertedindex/DocInput.class
+com/invertedindex/DocRecordReader.class
+com/invertedindex/InvertedIndex.class
